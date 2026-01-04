@@ -4,7 +4,7 @@ use std::env;
 use std::fs;
 use std::io;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum State {
     Correct,
     Wrong,
@@ -114,21 +114,46 @@ impl Config {
         revelations.sort_by(|a, b| a.index.cmp(&b.index));
         revelations
     }
+    fn word_exists(&self, guessed_word: &String) -> bool {
+        self.content.iter().any(|f| f == guessed_word)
+    }
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let config = Config::new(&args);
     println!("The chosen Word Is: {}", config.chosen_word);
+    let mut solved = false;
 
-    for _attempt in 0..5 {
-        let mut guess = String::new();
-        println!("Write Guess");
-        io::stdin()
-            .read_line(&mut guess)
-            .expect("Failed to read line");
-        guess.retain(|c| !c.is_whitespace());
-        let test = config.check(guess);
-        dbg!(test);
+    for _attempt in 0..4 {
+        let mut guess: String;
+        loop {
+            println!("Write Guess");
+            guess = String::new();
+            io::stdin()
+                .read_line(&mut guess)
+                .expect("Failed to read line");
+            guess.retain(|c| !c.is_whitespace());
+            let letter_count = guess.as_bytes().iter().len();
+            if letter_count != 5 {
+                println!("Word must be of 5 letters");
+                continue;
+            }
+            if config.word_exists(&guess) {
+                break;
+            } else {
+                println!("Word doesn't exist");
+            }
+        }
+        let revealations = config.check(guess);
+        if revealations.iter().all(|f| f.state == State::Correct) {
+            solved = true;
+            break;
+        }
+    }
+    if solved {
+        println!("Congratulations");
+    } else {
+        println!("Too bad !")
     }
 }
