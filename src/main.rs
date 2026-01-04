@@ -1,6 +1,5 @@
 use rand::rng;
 use rand::seq::IndexedRandom;
-use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
@@ -25,36 +24,6 @@ struct Revealation {
 }
 
 impl Revealation {
-    fn new(true_word: &mut [u8], guessed_letter: &u8, guessed_index: usize) -> Revealation {
-        let mut state = State::Wrong;
-        let mut found_index = 0;
-        for i in 0..5 {
-            if true_word[i] == *guessed_letter {
-                match state {
-                    State::Change => (),
-                    _ => found_index = i,
-                }
-                if guessed_index == i {
-                    state = State::Correct;
-                    break;
-                } else {
-                    state = State::Change;
-                }
-            }
-        }
-        match state {
-            State::Change | State::Correct => {
-                true_word[found_index] = 0x20;
-            }
-            _ => (),
-        }
-        println!("{:?}", true_word);
-        Revealation {
-            letter: *guessed_letter as char,
-            index: guessed_index,
-            state,
-        }
-    }
     fn get_correct(
         true_word: &mut [u8],
         guessed_letter: &u8,
@@ -121,7 +90,7 @@ impl Config {
         Config {
             _file_path: file_path,
             content: words,
-            chosen_word: "steev".to_string(),
+            chosen_word: chosen_word,
         }
     }
     fn check(&self, guessed_word: String) -> Vec<Revealation> {
