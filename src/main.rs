@@ -18,7 +18,7 @@ struct Config {
 }
 #[derive(Debug, Clone)]
 struct Revealation {
-    letter: char,
+    _letter: char,
     index: usize,
     state: State,
 }
@@ -146,6 +146,7 @@ fn main() {
             }
         }
         let revealations = config.check(guess);
+        dbg!(&revealations);
         if revealations.iter().all(|f| f.state == State::Correct) {
             solved = true;
             break;
