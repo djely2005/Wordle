@@ -141,7 +141,10 @@ impl Widget for &Game {
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
-        let mut guess_revelations = vec![];
+        let mut guess_revelations = vec![Line::from(format!(
+            " {} possible words",
+            self.config.possibilities.len().to_string()
+        ))];
         if let Some(revelations) = &self.revelations {
             for revelation in revelations {
                 let mut revelation_display: Vec<_> = vec![];
