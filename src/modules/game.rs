@@ -67,7 +67,9 @@ impl Game {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match (key_event.code, self.finished) {
             (KeyCode::Esc, _) => self.exit(),
-            (_, true) => {return;},
+            (_, true) => {
+                return;
+            }
             (KeyCode::Char(c), _) => self.add_char(c),
             (KeyCode::Delete | KeyCode::Backspace, _) => self.remove_char(),
             (KeyCode::Enter, _) => self.enter_guess(),
@@ -120,10 +122,12 @@ impl Game {
         revelation.iter().all(|f| f.state == State::Correct)
     }
     fn finish(&mut self) {
-        if !self.finished {return;}
+        if !self.finished {
+            return;
+        }
         if self.win_state {
-            self.title= String::from(" Congratulation ");
-        }else{
+            self.title = String::from(" Congratulation ");
+        } else {
             self.title = format!(" The true word was : {} ", self.config.chosen_word);
         }
     }
