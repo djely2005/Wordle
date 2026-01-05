@@ -137,12 +137,11 @@ impl Widget for &Game {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(format!(" {} ", self.title).bold());
         let instructions = Line::from(vec![" Quit ".into(), "<Esc> ".blue().bold()]);
-        let solution = Line::from(&self.config.chosen_word[..]);
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
-        let mut guess_revelations = vec![solution];
+        let mut guess_revelations = vec![];
         if let Some(revelations) = &self.revelations {
             for revelation in revelations {
                 let mut revelation_display: Vec<_> = vec![];

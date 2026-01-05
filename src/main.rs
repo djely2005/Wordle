@@ -7,5 +7,4 @@ fn main() -> io::Result<()> {
     let config = Config::new(&args);
     let mut game = Game::new(config);
     ratatui::run(|terminal| game.run(terminal))
-    // game.new_game();
 }
