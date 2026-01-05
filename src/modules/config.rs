@@ -3,6 +3,7 @@ use rand::rng;
 use rand::seq::IndexedRandom;
 use std::fs;
 
+#[derive(Default)]
 pub struct Config {
     pub _file_path: String,
     pub content: Vec<String>,
@@ -29,7 +30,7 @@ impl Config {
             chosen_word: chosen_word,
         }
     }
-    pub fn check(&self, guessed_word: String) -> Vec<Revelation> {
+    pub fn check(&self, guessed_word: &String) -> Vec<Revelation> {
         let mut true_word = self.chosen_word.as_bytes().to_vec().clone();
         let correct_revelations: Vec<Revelation> = guessed_word
             .as_bytes()
