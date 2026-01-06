@@ -1,8 +1,6 @@
 use crate::modules::revelation::Revelation;
-use crate::modules::state::State;
 use rand::rng;
 use rand::seq::IndexedRandom;
-use std::fs;
 
 #[derive(Default)]
 pub struct Config {
@@ -13,10 +11,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Config {
-        let file_path = args[1].clone();
-
-        let contents = fs::read_to_string(&file_path).expect("Couldn't Read File");
+    pub fn new(file_path: String, contents: String) -> Config {
         let words: Vec<String> = contents
             .split_ascii_whitespace()
             .map(|s| s.to_string())
