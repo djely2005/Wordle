@@ -28,7 +28,7 @@ const FILE_PATH: &str = "./valid-wordle-words.txt";
 const WORDS: &str = include_str!("../../valid-wordle-words.txt");
 
 impl Game {
-    pub fn new(config: Config) -> Game {
+    fn new(config: Config) -> Game {
         Game {
             config,
             title: String::from("Wordle"),
@@ -45,7 +45,7 @@ impl Game {
         Ok(())
     }
 
-    pub fn start() -> Game{
+    pub fn start() -> Game {
         let config = Config::new(FILE_PATH.to_string(), WORDS.to_string());
         Game::new(config)
     }
@@ -72,15 +72,18 @@ impl Game {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match (key_event.code, self.finished, key_event.modifiers) {
-            (KeyCode::Esc, _, _) => self.exit(),
-            (KeyCode::Char('r'), _, KeyModifiers::CONTROL) => {*self = Game::start()},
-            (_, true, _) => {
-                return;
-            }
-            (KeyCode::Char(c), _, _) => self.add_char(c),
-            (KeyCode::Delete | KeyCode::Backspace, _, _) => self.remove_char(),
-            (KeyCode::Enter, _, _) => self.enter_guess(),
+        match (key_event.code, key_event.modifiers) {
+            (KeyCode::Esc, _) => self.exit(),
+            (KeyCode::Char('r'), KeyModifiers::CONTROL) => *self = Game::start(),
+            _ => {}
+        }
+        if self.finished {
+            return;
+        }
+        match key_event.code {
+            KeyCode::Char(c) => self.add_char(c),
+            KeyCode::Delete | KeyCode::Backspace => self.remove_char(),
+            KeyCode::Enter => self.enter_guess(),
             _ => {}
         }
     }
@@ -144,15 +147,19 @@ impl Game {
 impl Widget for &Game {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(format!(" {} ", self.title).bold());
-        let instructions = Line::from(vec![" Quit ".into(), "<Esc> ".blue().bold(), " - ".bold(), " Restart ".into(), "<Ctrl-r> ".red().bold()]);
+        let instructions = Line::from(vec![
+            " Quit ".into(),
+            "<Esc> ".blue().bold(),
+            " - ".bold(),
+            " Restart ".into(),
+            "<Ctrl-r> ".red().bold(),
+        ]);
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
-        let mut guess_revelations = vec![Line::from(format!(
-            " {} possible words",
-            self.config.possibilities.len().to_string()
-        ))];
+        let mut guess_revelations =
+            vec![Line::from(format!(" {} possible words", "0".to_string()))];
         if let Some(revelations) = &self.revelations {
             for revelation in revelations {
                 let mut revelation_display: Vec<_> = vec![];

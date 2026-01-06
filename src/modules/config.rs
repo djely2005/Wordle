@@ -6,7 +6,6 @@ use rand::seq::IndexedRandom;
 pub struct Config {
     pub _file_path: String,
     pub content: Vec<String>,
-    pub possibilities: Vec<String>,
     pub chosen_word: String,
 }
 
@@ -23,7 +22,6 @@ impl Config {
             .clone();
         Config {
             _file_path: file_path,
-            possibilities: words.clone(),
             content: words,
             chosen_word: chosen_word,
         }
@@ -45,7 +43,7 @@ impl Config {
             .filter(|(index, _)| !correct_revelations.iter().any(|x| x.index == *index))
             .map(|c| Revelation::get_incorrect(&mut true_word, c.1, c.0))
             .collect();
-        
+
         let mut revelations = [correct_revelations, else_revelations].concat();
         revelations.sort_by(|a, b| a.index.cmp(&b.index));
         revelations
