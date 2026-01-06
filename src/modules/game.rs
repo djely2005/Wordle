@@ -1,6 +1,6 @@
 use std::io;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -24,6 +24,9 @@ pub struct Game {
     exit: bool,
 }
 
+const FILE_PATH: &str = "./valid-wordle-words.txt";
+const WORDS: &str = include_str!("../../valid-wordle-words.txt");
+
 impl Game {
     pub fn new(config: Config) -> Game {
         Game {
@@ -42,6 +45,10 @@ impl Game {
         Ok(())
     }
 
+    pub fn start() -> Game{
+        let config = Config::new(FILE_PATH.to_string(), WORDS.to_string());
+        Game::new(config)
+    }
     fn handle_end(&mut self) {
         if self.attempt == 5 {
             self.finished = true;
@@ -65,14 +72,15 @@ impl Game {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match (key_event.code, self.finished) {
-            (KeyCode::Esc, _) => self.exit(),
-            (_, true) => {
+        match (key_event.code, self.finished, key_event.modifiers) {
+            (KeyCode::Esc, _, _) => self.exit(),
+            (KeyCode::Char('r'), _, KeyModifiers::CONTROL) => {*self = Game::start()},
+            (_, true, _) => {
                 return;
             }
-            (KeyCode::Char(c), _) => self.add_char(c),
-            (KeyCode::Delete | KeyCode::Backspace, _) => self.remove_char(),
-            (KeyCode::Enter, _) => self.enter_guess(),
+            (KeyCode::Char(c), _, _) => self.add_char(c),
+            (KeyCode::Delete | KeyCode::Backspace, _, _) => self.remove_char(),
+            (KeyCode::Enter, _, _) => self.enter_guess(),
             _ => {}
         }
     }
@@ -136,7 +144,7 @@ impl Game {
 impl Widget for &Game {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(format!(" {} ", self.title).bold());
-        let instructions = Line::from(vec![" Quit ".into(), "<Esc> ".blue().bold()]);
+        let instructions = Line::from(vec![" Quit ".into(), "<Esc> ".blue().bold(), " - ".bold(), " Restart ".into(), "<Ctrl-r> ".red().bold()]);
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
