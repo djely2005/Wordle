@@ -11,16 +11,28 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::modules::{config::Config, revelation::Revelation, state::State};
+use crate::modules::{
+    config::Config,
+    revelation::Revelation,
+    solver::Solver,
+    state::State,
+};
+
+#[derive(Default)]
+pub struct GameState{
+    revelations: Option<Vec<Vec<Revelation>>>,
+    win_state: bool,
+    finished: bool,
+    attempt: usize,
+}
+
 #[derive(Default)]
 pub struct Game {
     config: Config,
     title: String,
     guess: String,
-    revelations: Option<Vec<Vec<Revelation>>>,
-    win_state: bool,
-    finished: bool,
-    attempt: usize,
+    game_state: GameState,
+    solver: Solver,
     exit: bool,
 }
 
@@ -30,6 +42,7 @@ const WORDS: &str = include_str!("../../valid-wordle-words.txt");
 impl Game {
     fn new(config: Config) -> Game {
         Game {
+            solver: Solver::new(config.content.clone()),
             config,
             title: String::from("Wordle"),
             ..Default::default()
@@ -50,8 +63,8 @@ impl Game {
         Game::new(config)
     }
     fn handle_end(&mut self) {
-        if self.attempt == 5 {
-            self.finished = true;
+        if self.game_state.attempt == 5 {
+            self.game_state.finished = true;
             self.finish();
         }
     }
@@ -77,7 +90,7 @@ impl Game {
             (KeyCode::Char('r'), KeyModifiers::CONTROL) => *self = Game::start(),
             _ => {}
         }
-        if self.finished {
+        if self.game_state.finished {
             return;
         }
         match key_event.code {
@@ -113,16 +126,20 @@ impl Game {
             return;
         }
         let revelation = self.config.check(&self.guess);
+        for rev in &revelation {
+            self.solver.add_revelation(rev);
+        }
         if Game::check_game_over(&revelation) {
-            self.win_state = true;
-            self.finished = true;
+            self.game_state.win_state = true;
+            self.game_state.finished = true;
             self.finish();
         }
-        match &mut self.revelations {
+        match &mut self.game_state.revelations {
             Some(revelations) => revelations.push(revelation),
-            None => self.revelations = Some(vec![revelation]),
+            None => self.game_state.revelations = Some(vec![revelation]),
         }
-        self.attempt += 1;
+        self.solver.filtering_possibilities();
+        self.game_state.attempt += 1;
         self.clear_guess();
     }
     fn exit(&mut self) {
@@ -133,10 +150,10 @@ impl Game {
         revelation.iter().all(|f| f.state == State::Correct)
     }
     fn finish(&mut self) {
-        if !self.finished {
+        if !self.game_state.finished {
             return;
         }
-        if self.win_state {
+        if self.game_state.win_state {
             self.title = String::from(" Congratulation ");
         } else {
             self.title = format!(" The true word was : {} ", self.config.chosen_word);
@@ -159,8 +176,8 @@ impl Widget for &Game {
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
         let mut guess_revelations =
-            vec![Line::from(format!(" {} possible words", "0".to_string()))];
-        if let Some(revelations) = &self.revelations {
+            vec![Line::from(format!(" {} possible words", self.solver.number_of_possibilities().to_string()))];
+        if let Some(revelations) = &self.game_state.revelations {
             for revelation in revelations {
                 let mut revelation_display: Vec<_> = vec![];
                 for r in revelation {
