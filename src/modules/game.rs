@@ -112,13 +112,20 @@ impl Game {
     fn clear_guess(&mut self) {
         self.guess.clear();
     }
-    fn enter_guess(&mut self) {
-        if self.guess.as_bytes().len() != 5 {
+    fn is_guess_correct(&mut self) -> bool {
+        if self.guess.chars().count() != 5 {
             self.title = String::from(" Word must be of 5 letters ");
-            return;
+            return false;
         }
         if !self.config.word_exists(&self.guess) {
             self.title = String::from(" Word doesn't exist in dectionary ");
+            return false;
+        }
+        true
+    }
+
+    fn enter_guess(&mut self) {
+        if !self.is_guess_correct() {
             return;
         }
         let revelation = self.config.check(&self.guess);
