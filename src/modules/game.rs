@@ -11,15 +11,10 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::modules::{
-    config::Config,
-    revelation::Revelation,
-    solver::Solver,
-    state::State,
-};
+use crate::modules::{config::Config, revelation::Revelation, solver::Solver, state::State};
 
 #[derive(Default)]
-pub struct GameState{
+pub struct GameState {
     revelations: Option<Vec<Vec<Revelation>>>,
     win_state: bool,
     finished: bool,
@@ -62,12 +57,13 @@ impl Game {
         let config = Config::new(FILE_PATH.to_string(), WORDS.to_string());
         Game::new(config)
     }
+
     fn handle_end(&mut self) {
         if self.game_state.attempt == 5 {
-            self.game_state.finished = true;
             self.finish();
         }
     }
+
     fn draw(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
     }
@@ -131,7 +127,6 @@ impl Game {
         }
         if Game::check_game_over(&revelation) {
             self.game_state.win_state = true;
-            self.game_state.finished = true;
             self.finish();
         }
         match &mut self.game_state.revelations {
@@ -150,9 +145,7 @@ impl Game {
         revelation.iter().all(|f| f.state == State::Correct)
     }
     fn finish(&mut self) {
-        if !self.game_state.finished {
-            return;
-        }
+        self.game_state.finished = true;
         if self.game_state.win_state {
             self.title = String::from(" Congratulation ");
         } else {
@@ -175,8 +168,10 @@ impl Widget for &Game {
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
-        let mut guess_revelations =
-            vec![Line::from(format!(" {} possible words", self.solver.number_of_possibilities().to_string()))];
+        let mut guess_revelations = vec![Line::from(format!(
+            " {} possible words",
+            self.solver.number_of_possibilities().to_string()
+        ))];
         if let Some(revelations) = &self.game_state.revelations {
             for revelation in revelations {
                 let mut revelation_display: Vec<_> = vec![];
