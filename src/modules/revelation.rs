@@ -1,6 +1,6 @@
 use crate::modules::state::State;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Revelation {
     pub letter: char,
     pub index: usize,

@@ -2,16 +2,16 @@ use crate::modules::{revelation::Revelation, state::State};
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug)]
-struct LetterConstraint {
-    min: usize,
-    max: Option<usize>,
+pub struct LetterConstraint {
+    pub min: usize,
+    pub max: Option<usize>,
 }
 
 #[derive(Default)]
 pub struct Solver {
     pub possibilities: Vec<String>,
-    revelations: Vec<Revelation>,
-    constraints: HashMap<char, LetterConstraint>,
+    pub revelations: Vec<Revelation>,
+    pub constraints: HashMap<char, LetterConstraint>,
 }
 
 impl Solver {
@@ -28,9 +28,13 @@ impl Solver {
     }
 
     pub fn add_revelation(&mut self, rev: &Revelation) {
-        let entry = self.constraints.entry(rev.letter).or_insert(
-            LetterConstraint { min: 0, max: None }
-        );
+        if self.revelations.contains(rev) {
+            return;
+        }
+        let entry = self
+            .constraints
+            .entry(rev.letter)
+            .or_insert(LetterConstraint { min: 0, max: None });
 
         match rev.state {
             State::Correct | State::Change => {
@@ -50,14 +54,20 @@ impl Solver {
 
             let positional_ok = self.revelations.iter().all(|rev| {
                 match rev.state {
-                    State::Correct => {
-                        bytes[rev.index] == rev.letter as u8
+                    State::Correct => bytes[rev.index] == rev.letter as u8,
+                    State::Change => bytes[rev.index] != rev.letter as u8,
+                    State::Wrong => {
+                        let constraint = self.constraints.get(&rev.letter);
+                        if let Some(c) = constraint {
+                            if c.max == Some(c.min) && c.min > 0 {
+                                true
+                            } else {
+                                bytes[rev.index] != rev.letter as u8
+                            }
+                        } else {
+                            bytes[rev.index] != rev.letter as u8
+                        }
                     }
-                    State::Change => {
-                        bytes[rev.index] != rev.letter as u8 &&
-                        word.contains(rev.letter)
-                    }
-                    State::Wrong => true,
                 }
             });
 
@@ -73,8 +83,7 @@ impl Solver {
             self.constraints.iter().all(|(letter, constraint)| {
                 let actual = *counts.get(letter).unwrap_or(&0);
 
-                actual >= constraint.min &&
-                constraint.max.map_or(true, |max| actual <= max)
+                actual >= constraint.min && constraint.max.map_or(true, |max| actual <= max)
             })
         });
     }
