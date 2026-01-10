@@ -11,11 +11,12 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-use crate::modules::{config::Config, revelation::Revelation, solver::Solver, state::State};
+use crate::modules::{config::Config, revelation::WordRevelation, solver::Solver, state::State};
+
 
 #[derive(Default)]
 pub struct GameState {
-    revelations: Option<Vec<Vec<Revelation>>>,
+    revelations: Option<Vec<WordRevelation>>,
     win_state: bool,
     finished: bool,
     attempt: usize,
@@ -129,9 +130,7 @@ impl Game {
             return;
         }
         let revelation = self.config.check(&self.guess);
-        for rev in &revelation {
-            self.solver.add_revelation(rev);
-        }
+        self.solver.add_revelations(&revelation);
         if Game::check_game_over(&revelation) {
             self.game_state.win_state = true;
             self.finish();
@@ -140,7 +139,6 @@ impl Game {
             Some(revelations) => revelations.push(revelation),
             None => self.game_state.revelations = Some(vec![revelation]),
         }
-        self.solver.filtering_possibilities();
         self.game_state.attempt += 1;
         self.clear_guess();
     }
@@ -148,8 +146,8 @@ impl Game {
         self.exit = true;
     }
 
-    fn check_game_over(revelation: &Vec<Revelation>) -> bool {
-        revelation.iter().all(|f| f.state == State::Correct)
+    fn check_game_over(revelation: &WordRevelation) -> bool {
+        revelation.into_iter().all(|f| f.state == State::Correct)
     }
     fn finish(&mut self) {
         self.game_state.finished = true;
