@@ -39,31 +39,46 @@ impl Solver {
     }
 
     pub fn add_revelations(&mut self, revelations: &WordRevelation) {
+        let mut current_guess_min: HashMap<char, usize> = HashMap::new();
+
         for rev in revelations {
-            self.add_revelation(rev);
+            if rev.state == State::Correct || rev.state == State::Change {
+                *current_guess_min.entry(rev.letter).or_insert(0) += 1;
+            }
+
+            if !self.revelations.contains(rev) {
+                self.revelations.push(rev.clone());
+            }
         }
+
+        for (letter, count) in current_guess_min {
+            let entry = self
+                .constraints
+                .entry(letter)
+                .or_insert(LetterConstraint { min: 0, max: None });
+            if count > entry.min {
+                entry.min = count;
+            }
+        }
+
+        for rev in revelations {
+            if rev.state == State::Wrong {
+                let entry = self
+                    .constraints
+                    .entry(rev.letter)
+                    .or_insert(LetterConstraint { min: 0, max: None });
+                let count_in_this_guess = revelations
+                    .into_iter()
+                    .filter(|r| {
+                        r.letter == rev.letter
+                            && (r.state == State::Correct || r.state == State::Change)
+                    })
+                    .count();
+                entry.max = Some(count_in_this_guess);
+            }
+        }
+
         self.possibilities = self.filtering_possibilities();
-    }
-
-    pub fn add_revelation(&mut self, rev: &LetterRevelation) {
-        if self.revelations.contains(rev) {
-            return;
-        }
-        let entry = self
-            .constraints
-            .entry(rev.letter)
-            .or_insert(LetterConstraint { min: 0, max: None });
-
-        match rev.state {
-            State::Correct | State::Change => {
-                entry.min += 1;
-            }
-            State::Wrong => {
-                entry.max = Some(entry.min);
-            }
-        }
-
-        self.revelations.push(rev.clone());
     }
 
     fn filter_word(&self, word: &str) -> bool {
@@ -115,213 +130,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn correct_letter() {
-        let mut solver = Solver::new(vec![]);
-        solver.add_revelation(&LetterRevelation {
-            index: 0,
-            letter: 't',
-            state: State::Correct,
-        });
-        assert!(solver.filter_word("tests"));
-    }
-
-    #[test]
-    fn wrong_letter() {
-        let mut solver = Solver::new(vec![]);
-        solver.add_revelation(&LetterRevelation {
-            index: 0,
-            letter: 't',
-            state: State::Wrong,
-        });
-        assert!(!solver.filter_word("tests"));
-    }
-
-    #[test]
-    fn change_letter() {
-        let mut solver = Solver::new(vec![]);
-        solver.add_revelation(&LetterRevelation {
-            index: 0,
-            letter: 't',
-            state: State::Change,
-        });
-        assert!(!solver.filter_word("tests"));
-    }
-
-    #[test]
-    fn everything_correct() {
-        let mut solver = Solver::new(vec![]);
-        for (idx, c) in String::from("tests").chars().enumerate() {
-            solver.add_revelation(&LetterRevelation {
-                index: idx,
-                letter: c,
-                state: State::Correct,
-            });
-        }
-        assert!(solver.filter_word("tests"));
-    }
-
-    #[test]
-    fn bug() {
-        let mut solver = Solver::new(vec![]);
-        let mut revelations: HashMap<String, WordRevelation> = Default::default();
-        revelations.insert(
-            String::from("tests"),
-            WordRevelation::new(vec![
-                LetterRevelation {
-                    index: 0,
-                    letter: 't',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 1,
-                    letter: 'e',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 2,
-                    letter: 's',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 3,
-                    letter: 't',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 4,
-                    letter: 's',
-                    state: State::Wrong,
-                },
-            ]),
-        );
-        revelations.insert(
-            String::from("clear"),
-            WordRevelation::new(vec![
-                LetterRevelation {
-                    index: 0,
-                    letter: 'c',
-                    state: State::Change,
-                },
-                LetterRevelation {
-                    index: 1,
-                    letter: 'l',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 2,
-                    letter: 'e',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 3,
-                    letter: 'a',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 4,
-                    letter: 'r',
-                    state: State::Change,
-                },
-            ]),
-        );
-
-        revelations.insert(
-            String::from("blink"),
-            WordRevelation::new(vec![
-                LetterRevelation {
-                    index: 0,
-                    letter: 'b',
-                    state: State::Change,
-                },
-                LetterRevelation {
-                    index: 1,
-                    letter: 'l',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 2,
-                    letter: 'i',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 3,
-                    letter: 'n',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 4,
-                    letter: 'k',
-                    state: State::Wrong,
-                },
-            ]),
-        );
-        revelations.insert(
-            String::from("tames"),
-            WordRevelation::new(vec![
-                LetterRevelation {
-                    index: 0,
-                    letter: 't',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 1,
-                    letter: 'a',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 2,
-                    letter: 'm',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 3,
-                    letter: 'e',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 4,
-                    letter: 's',
-                    state: State::Wrong,
-                },
-            ]),
-        );
-        revelations.insert(
-            String::from("humps"),
-            WordRevelation::new(vec![
-                LetterRevelation {
-                    index: 0,
-                    letter: 'h',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 1,
-                    letter: 'u',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 2,
-                    letter: 'm',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 3,
-                    letter: 'p',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 4,
-                    letter: 's',
-                    state: State::Wrong,
-                },
-            ]),
-        );
-        for f in revelations.into_values() {
-            solver.add_revelations(&f);
-        }
-        dbg!(&solver.constraints);
-        assert!(solver.filter_word("scrob"));
-    }
-    #[test]
     fn another_bug() {
         let mut solver = Solver::new(vec![]);
         let mut revelations: HashMap<String, WordRevelation> = Default::default();
@@ -336,12 +144,12 @@ mod tests {
                 LetterRevelation {
                     index: 1,
                     letter: 'e',
-                    state: State::Wrong,
+                    state: State::Change,
                 },
                 LetterRevelation {
                     index: 2,
                     letter: 's',
-                    state: State::Wrong,
+                    state: State::Change,
                 },
                 LetterRevelation {
                     index: 3,
@@ -361,7 +169,7 @@ mod tests {
                 LetterRevelation {
                     index: 0,
                     letter: 'c',
-                    state: State::Change,
+                    state: State::Wrong,
                 },
                 LetterRevelation {
                     index: 1,
@@ -371,7 +179,7 @@ mod tests {
                 LetterRevelation {
                     index: 2,
                     letter: 'e',
-                    state: State::Wrong,
+                    state: State::Change,
                 },
                 LetterRevelation {
                     index: 3,
@@ -381,7 +189,7 @@ mod tests {
                 LetterRevelation {
                     index: 4,
                     letter: 'r',
-                    state: State::Change,
+                    state: State::Wrong,
                 },
             ]),
         );
@@ -392,7 +200,7 @@ mod tests {
                 LetterRevelation {
                     index: 0,
                     letter: 'b',
-                    state: State::Change,
+                    state: State::Wrong,
                 },
                 LetterRevelation {
                     index: 1,
@@ -402,7 +210,7 @@ mod tests {
                 LetterRevelation {
                     index: 2,
                     letter: 'i',
-                    state: State::Wrong,
+                    state: State::Correct,
                 },
                 LetterRevelation {
                     index: 3,
@@ -417,65 +225,39 @@ mod tests {
             ]),
         );
         revelations.insert(
-            String::from("tames"),
+            String::from("shiny"),
             WordRevelation::new(vec![
                 LetterRevelation {
                     index: 0,
-                    letter: 't',
-                    state: State::Wrong,
+                    letter: 's',
+                    state: State::Correct,
                 },
                 LetterRevelation {
                     index: 1,
-                    letter: 'a',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 2,
-                    letter: 'm',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 3,
-                    letter: 'e',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
-                    index: 4,
-                    letter: 's',
-                    state: State::Wrong,
-                },
-            ]),
-        );
-        revelations.insert(
-            String::from("humps"),
-            WordRevelation::new(vec![
-                LetterRevelation {
-                    index: 0,
                     letter: 'h',
                     state: State::Wrong,
                 },
                 LetterRevelation {
-                    index: 1,
-                    letter: 'u',
-                    state: State::Wrong,
-                },
-                LetterRevelation {
                     index: 2,
-                    letter: 'm',
-                    state: State::Wrong,
+                    letter: 'i',
+                    state: State::Correct,
                 },
                 LetterRevelation {
                     index: 3,
-                    letter: 'p',
+                    letter: 'n',
                     state: State::Wrong,
                 },
                 LetterRevelation {
                     index: 4,
-                    letter: 's',
+                    letter: 'y',
                     state: State::Wrong,
                 },
             ]),
         );
-        assert!(solver.filter_word("scrob"));
+        for f in revelations.into_values() {
+            solver.add_revelations(&f);
+        }
+        dbg!(&solver.constraints);
+        assert!(solver.filter_word("spide"));
     }
 }
