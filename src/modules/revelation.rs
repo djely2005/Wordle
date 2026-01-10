@@ -48,7 +48,9 @@ impl LetterRevelation {
                 break;
             }
         }
-        true_word[found_index] = 0x20;
+        if state == State::Change {
+            true_word[found_index] = 0x20;
+        }
         return LetterRevelation {
             letter: *guessed_letter as char,
             index: guessed_index,
