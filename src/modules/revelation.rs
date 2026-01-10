@@ -57,8 +57,6 @@ impl LetterRevelation {
     }
 }
 
-
-
 pub struct WordRevelation(
     LetterRevelation,
     LetterRevelation,
@@ -70,7 +68,7 @@ pub struct WordRevelation(
 impl FromIterator<LetterRevelation> for WordRevelation {
     fn from_iter<T: IntoIterator<Item = LetterRevelation>>(iter: T) -> Self {
         let mut iter = iter.into_iter();
-        
+
         Self(
             iter.next().expect("Iterator provided fewer than 5 items"),
             iter.next().expect("Iterator provided fewer than 5 items"),

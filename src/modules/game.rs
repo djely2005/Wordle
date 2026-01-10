@@ -13,7 +13,6 @@ use ratatui::{
 
 use crate::modules::{config::Config, revelation::WordRevelation, solver::Solver, state::State};
 
-
 #[derive(Default)]
 pub struct GameState {
     revelations: Option<Vec<WordRevelation>>,

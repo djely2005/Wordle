@@ -26,7 +26,11 @@ impl Config {
             chosen_word: chosen_word,
         }
     }
-    fn get_correct_revelations(&self, guessed_word: &str, true_word: &mut Vec<u8>) -> Vec<LetterRevelation> {
+    fn get_correct_revelations(
+        &self,
+        guessed_word: &str,
+        true_word: &mut Vec<u8>,
+    ) -> Vec<LetterRevelation> {
         guessed_word
             .as_bytes()
             .iter()
@@ -36,7 +40,12 @@ impl Config {
             .map(|el| el.unwrap())
             .collect()
     }
-    fn get_incorrect_revelation(&self, guessed_word: &str, true_word: &mut Vec<u8>, correct_revelations: &Vec<LetterRevelation>) -> Vec<LetterRevelation> {
+    fn get_incorrect_revelation(
+        &self,
+        guessed_word: &str,
+        true_word: &mut Vec<u8>,
+        correct_revelations: &Vec<LetterRevelation>,
+    ) -> Vec<LetterRevelation> {
         guessed_word
             .as_bytes()
             .iter()
@@ -49,7 +58,8 @@ impl Config {
     pub fn check(&self, guessed_word: &str) -> WordRevelation {
         let mut true_word = self.chosen_word.as_bytes().to_vec().clone();
         let correct_revelations = self.get_correct_revelations(guessed_word, &mut true_word);
-        let else_revelations: Vec<LetterRevelation> = self.get_incorrect_revelation(guessed_word, &mut true_word, &correct_revelations);
+        let else_revelations: Vec<LetterRevelation> =
+            self.get_incorrect_revelation(guessed_word, &mut true_word, &correct_revelations);
 
         let mut revelations = [correct_revelations, else_revelations].concat();
         revelations.sort_by(|a, b| a.index.cmp(&b.index));

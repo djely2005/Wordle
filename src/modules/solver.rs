@@ -42,7 +42,7 @@ impl Solver {
         for rev in revelations {
             self.add_revelation(rev);
         }
-        self.filtering_possibilities();
+        self.possibilities = self.filtering_possibilities();
     }
 
     pub fn add_revelation(&mut self, rev: &LetterRevelation) {
@@ -66,41 +66,46 @@ impl Solver {
         self.revelations.push(rev.clone());
     }
 
-    fn filtering_possibilities(&mut self) {
-        self.possibilities.retain(|word| {
-            let bytes = word.as_bytes();
+    fn filter_word(&self, word: &str) -> bool {
+        let bytes = word.as_bytes();
 
-            let positional_ok = self.revelations.iter().all(|rev| match rev.state {
-                State::Correct => bytes[rev.index] == rev.letter as u8,
-                State::Change => bytes[rev.index] != rev.letter as u8,
-                State::Wrong => {
-                    let constraint = self.constraints.get(&rev.letter);
-                    if let Some(c) = constraint {
-                        if c.max == Some(c.min) && c.min > 0 {
-                            true
-                        } else {
-                            bytes[rev.index] != rev.letter as u8
-                        }
+        let positional_ok = self.revelations.iter().all(|rev| match rev.state {
+            State::Correct => bytes[rev.index] == rev.letter as u8,
+            State::Change => bytes[rev.index] != rev.letter as u8,
+            State::Wrong => {
+                let constraint = self.constraints.get(&rev.letter);
+                if let Some(c) = constraint {
+                    if c.max == Some(c.min) && c.min > 0 {
+                        true
                     } else {
                         bytes[rev.index] != rev.letter as u8
                     }
+                } else {
+                    bytes[rev.index] != rev.letter as u8
                 }
-            });
-
-            if !positional_ok {
-                return false;
             }
-
-            let mut counts: HashMap<char, usize> = HashMap::new();
-            for c in word.chars() {
-                *counts.entry(c).or_insert(0) += 1;
-            }
-
-            self.constraints.iter().all(|(letter, constraint)| {
-                let actual = *counts.get(letter).unwrap_or(&0);
-
-                actual >= constraint.min && constraint.max.map_or(true, |max| actual <= max)
-            })
         });
+
+        if !positional_ok {
+            return false;
+        }
+
+        let mut counts: HashMap<char, usize> = HashMap::new();
+        for c in word.chars() {
+            *counts.entry(c).or_insert(0) += 1
+        }
+
+        self.constraints.iter().all(|(letter, constraint)| {
+            let actual = *counts.get(letter).unwrap_or(&0);
+            actual >= constraint.min && constraint.max.map_or(true, |max| actual <= max)
+        })
+    }
+
+    fn filtering_possibilities(&mut self) -> Vec<String> {
+        self.possibilities
+            .iter()
+            .filter(|word| self.filter_word(word))
+            .cloned()
+            .collect()
     }
 }

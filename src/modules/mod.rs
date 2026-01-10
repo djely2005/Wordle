@@ -1,5 +1,5 @@
 pub mod config;
-pub mod revelation;
-pub mod state;
 pub mod game;
+pub mod revelation;
 pub mod solver;
+pub mod state;
