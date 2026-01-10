@@ -23,7 +23,7 @@ impl Config {
         Config {
             _file_path: file_path,
             content: words,
-            chosen_word: chosen_word,
+            chosen_word:  String::from("scrub")// chosen_word,
         }
     }
     fn get_correct_revelations(

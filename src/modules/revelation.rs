@@ -65,6 +65,20 @@ pub struct WordRevelation(
     LetterRevelation,
 );
 
+impl WordRevelation {
+    pub fn new(v: Vec<LetterRevelation>) -> WordRevelation{
+        let mut iter = v.into_iter();
+
+        WordRevelation(
+            iter.next().expect("Iterator provided fewer than 5 items"),
+            iter.next().expect("Iterator provided fewer than 5 items"),
+            iter.next().expect("Iterator provided fewer than 5 items"),
+            iter.next().expect("Iterator provided fewer than 5 items"),
+            iter.next().expect("Iterator provided fewer than 5 items"),
+        )
+    }
+}
+
 impl FromIterator<LetterRevelation> for WordRevelation {
     fn from_iter<T: IntoIterator<Item = LetterRevelation>>(iter: T) -> Self {
         let mut iter = iter.into_iter();
