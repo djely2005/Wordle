@@ -29,7 +29,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/v')
       with:
-        files: target/release/Wordle
+        files: target/release/wordle
 
   build-windows:
     runs-on: windows-latest
@@ -47,4 +47,4 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/v')
       with:
-        files: target/release/Wordle.exe
+        files: target/release/wordle.exe
