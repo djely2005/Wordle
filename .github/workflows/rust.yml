@@ -1,33 +1,50 @@
-name: Rust
+name: Rust CI with Cross-Compilation
 
 on:
   push:
     branches: [ "main" ]
-    tags:
-      - 'v*'
-
-permissions:
-  contents: write
+  release:
+    types: [created]
 
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Build for Linux
+      run: cargo build --release
+    
+    - name: Upload Linux binary
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        files: target/release/Wordle
 
-      - name: Build
-        run: cargo build --release
-
-      - name: Run tests
-        run: cargo test
-
-      - name: Upload binaries to GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            target/release/Wordle
-            target/release/Wordle.exe
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Build for Windows
+      run: cargo build --release
+    
+    - name: Upload Windows binary
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        files: target/release/Wordle.exe
